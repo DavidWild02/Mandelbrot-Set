@@ -1,5 +1,13 @@
 #include "renderthread.h"
 
+// default settings
+coloring::colorfunction RenderThread::colorStyle = coloring::colorfunction::zickZackRGB;
+coloring::drawingfunction RenderThread::drawingStyle = coloring::drawingfunction::iteration;
+#define COMPLEX std::complex<double>
+std::function<COMPLEX(COMPLEX, COMPLEX)> RenderThread::formula = [](COMPLEX c, COMPLEX z){
+    return z * z + c;
+};
+#undef COMPLEX
 
 RenderThread::RenderThread(QObject *parent)
     : QThread(parent)
@@ -17,6 +25,7 @@ RenderThread::~RenderThread(){
     wait();
 }
 
+// Zeichenflaeche need sometimes some coordinates for zooming and scaling
 QPointF RenderThread::calculate_coordinates(QSize size, double x, double y, double scale){
     double proportionH = MINSIZE.height()/size.height();
     double proportionW = MINSIZE.width()/size.width();
@@ -25,6 +34,7 @@ QPointF RenderThread::calculate_coordinates(QSize size, double x, double y, doub
                    y/MINSIZE.height()*VIEW->height()*scale*zoom);
 }
 
+// doesnt calculate, does only control the thread in the background
 void RenderThread::do_work(const QSize size, const double xcor, const double ycor, double zoom)
 {
     QMutexLocker locker(&mutex);
@@ -42,6 +52,7 @@ void RenderThread::do_work(const QSize size, const double xcor, const double yco
     }
 }
 
+// automatically called by start() and condition.wakeOne()
 void RenderThread::run(){
     forever{
         mutex.lock();
@@ -58,7 +69,10 @@ void RenderThread::run(){
         while(i <= 8){
             int maxIterations = (1 << (i * 2 + 6)) + 36;
             bool allBlack = true;
-        // Punkte des Coordinatensystems des Fensters durch gehen, und diese auf die Coordinaten der Complexen Ebene umrechnen
+
+
+            // x|y (window) -> x+yi (complex plane)
+            // calculates only the coordinates from the window, image-size into scaled coordinates of the complex plane.
             for(int x = 0; x < size.width(); x++)
             {
                 if(restart) break;
@@ -72,8 +86,10 @@ void RenderThread::run(){
                     double imag = y - 1.0/2.0*size.height();
 
                     QPointF c = calculate_coordinates(size, real, imag, zoom);
-                    // Farbe auswählen und punkt einzeichnen
-                    qImage.setPixel(x, y, formula(std::complex<double>(c.x() + xcor, c.y() - ycor), maxIterations));
+
+
+                    // choose color and draw point
+                    qImage.setPixel(x, y, in_mandelbrot_set(std::complex<double>(c.x() + xcor, c.y() - ycor), maxIterations));
 
                     if(qImage.pixelColor(x, y) != QColor(0, 0, 0))
                         allBlack = false;
@@ -96,48 +112,64 @@ void RenderThread::run(){
     }
 }
 
-// hier wird berechnet ob ein Punkt in der MandelbrotMenge liegt oder nicht
-// als Rückgabewert wird eine Farbe mitgegeben
-QRgb RenderThread::in_mandelbrot_set(std::complex<double> c,std::complex<double> z, int maxIterations){
+
+
+QRgb RenderThread::in_mandelbrot_set(std::complex<double> complexPoint, int maxIterations){
     QMutex qmutex;
-    QMutexLocker locker(&qmutex);
-    // theoretisch hätte MAX_ITERATIONS den Wert unendlich, allerdings kann der Computer damit nicht rechnen.
-    // somit muss ein endliche Zahl an Iterationen durchgegangen werden.
-    // Je mehr Iterationen desto genauer wird das Ergebnis
-    for(int i = 0; i < maxIterations; i++)
-    {
-        z = z * z + c;
 
-        // Wenn der Punkt außerhalb der Mandelbrotmenge liegt wird er eingefärbt,
-        // je nachdem wie viel Iterationen gebraucht wurden
-        if(std::abs(z) > 2)
-        {
-            const int numOfColors = 3 * 10;
-            const int numOfSteps = 10;
+    std::complex<double> z = (isForMandelbrot) ? 0 : complexPoint;
+    std::complex<double> c = (isForMandelbrot) ? complexPoint : cJuliaMenge;
 
-            int r, g, b;
-            int range = 255*(i%numOfSteps + 1)/(numOfSteps);
-            switch( (i % numOfColors) / numOfSteps)
+
+    switch(drawingStyle){
+        case coloring::drawingfunction::iteration :
+            for(int i = 0; i < maxIterations; i++)
             {
-                case 0:
-                    r = range;
-                    g = 255 - range;
-                    b = 0;
-                break;
-                case 1:
-                    b = range;
-                    r = 255 -range;
-                    g = 0;
-                break;
-                default:
-                    g = range;
-                    b = 255 - range;
-                    r = 0;
-            }
-            return qRgb(r,g,b);
-        }
-    }
+                z = formula(c, z);
 
-    // liegt der Punkt innerhalb der MandelbrotMenge wird er Schwarz angemalt
-    return qRgb(0,0,0);
+                // point is not part of the Mandelbrotset = colored,
+                // how to colorate the point is pointless, you can be creative
+                if(std::abs(z) > 2){
+                    switch(colorStyle){
+                        case coloring::colorfunction::wavelength :
+                            return coloring::wavelength_color(i);
+                        case coloring::colorfunction::cieInnercircle :
+                            return coloring::cie_innercircle(i);
+                        case coloring::colorfunction::zickZackRGB :
+                            return coloring::zick_zack_rgb(i);
+                    }
+                }
+            }
+            // point is a element of the Mandelbrotset = black
+            return qRgb(0,0,0);
+
+        case coloring::drawingfunction::innerColoring :
+            for(int i = 0; i < maxIterations; i++)
+            {
+                z = formula(c,z);
+                if(std::abs(z) > 2)
+                    return qRgb(0,0,0);
+            }
+            return coloring::colored_c_plane(z);
+
+        case coloring::drawingfunction::coloredArgument :
+            for(int i = 0; i < maxIterations; i++)
+            {
+                z = formula(c,z);
+                if(std::abs(z) > 2)
+                    return coloring::colored_by_argument(z);
+            }
+            return qRgb(0,0,0);
+
+        case coloring::drawingfunction::orbitTrapping :
+            double dist = 1e10;
+            for(int i = 0; i < maxIterations; i++)
+            {
+                z = formula(c,z);
+                if(std::abs(z) > 2)
+                    return coloring::black_white_distance(std::sqrt(dist));
+                dist = std::min(dist, std::pow(std::abs(z - std::complex<double>(0,0)), 2));
+            }
+            return qRgb(255,255,255);
+    }
 }

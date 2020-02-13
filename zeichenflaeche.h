@@ -5,24 +5,29 @@
 #include <QMouseEvent>
 #include <QPixmap>
 #include <QImage>
+#include <QPainter>
 #include "renderthread.h"
 
 namespace Ui {
 class Zeichenflaeche;
 }
 
+
+
+// Zeichenflaeche is a class for interacting with the image, zooming, moving, etc. It doesnt calculate the mandelbrot set,
+// because, that would freeze the UI. The Renderthread, does the calculation seperatly.
 class Zeichenflaeche : public QWidget
 {
     Q_OBJECT
 
 public:
-    Zeichenflaeche(QWidget *parent= nullptr);
+    Zeichenflaeche(bool isFMB, QWidget *parent= nullptr);
     ~Zeichenflaeche();
 
     void render();
     void render(double real, double imag, double zoom);
 
-    void set_formula(QRgb (*funktionsZeiger) (std::complex<double>, int));
+    QPixmap get_pixmap();
     bool selectPoint = false;
 
 
@@ -43,7 +48,7 @@ private:
 
     QPixmap pixmap;
     RenderThread renderthread;
-    QPoint newMousePos = QPoint(0, 0);
+    QPoint newCenterPos = QPoint(0, 0);
     QPointF offset = QPointF(0, 0);
     QPoint lastDragPos = QPoint(0, 0);
     QPoint pixmapOffset = QPoint(0, 0);

@@ -9,21 +9,24 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
     ui(new Ui::Mandelbrot),
     corButton(new QPushButton),
     selectButton(new QPushButton),
-    zeichenflaeche_b(new Zeichenflaeche()),
+    zeichenflaeche_b(new Zeichenflaeche(true)),
     xEdit_b(new QLineEdit),
     yEdit_b(new QLineEdit),
     xyButton_b(new QPushButton),
     zoomEdit_b(new QLineEdit),
     zoomButton_b(new QPushButton),
-    zeichenflaeche_j(new Zeichenflaeche()),
+    saveButton_b(new QPushButton),
+    zeichenflaeche_j(new Zeichenflaeche(false)),
     xEdit_j(new QLineEdit),
     yEdit_j(new QLineEdit),
     xyButton_j(new QPushButton),
     zoomEdit_j(new QLineEdit),
-    zoomButton_j(new QPushButton)
+    zoomButton_j(new QPushButton),
+    saveButton_j(new QPushButton)
 {
     ui->setupUi(this);
 
+    // set the text, etc. for the Buttons, etc.
     QLabel* setXCoordinates_b = new QLabel("set X Coordinate:");
     setXCoordinates_b->setBuddy(xEdit_b);
     QLabel* setYCoordinates_b = new QLabel("set Y Coordinate:");
@@ -32,6 +35,7 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
     QLabel* setZoom_b = new QLabel("set Zoom:");
     setZoom_b->setBuddy(zoomEdit_b);
     zoomButton_b->setText("Zoom festlegen");
+    saveButton_b->setText("Save Mandelbrot-set");
 
     QLabel* setXCoordinates_j = new QLabel("set X Coordinate:");
     setXCoordinates_j->setBuddy(xEdit_j);
@@ -41,11 +45,11 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
     QLabel* setZoom_j = new QLabel("set Zoom:");
     setZoom_j->setBuddy(zoomEdit_j);
     zoomButton_j->setText("Zoom festlegen");
+    saveButton_j->setText("Save Julia-set");
 
     corButton->setText(tr("Koordinaten übertragen"));
     QLabel* newCorJM = new QLabel();
     newCorJM->setText("-0.5 + 0i");
-
     selectButton->setText(tr("Punkt aussuchen"));
 
 
@@ -62,6 +66,7 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
 
 
 
+    // this part is about how to structure the GUI
     QBoxLayout* rowCoordinates = new QBoxLayout(QBoxLayout::LeftToRight);
 
     rowCoordinates->addWidget(setXCoordinates_b);
@@ -96,10 +101,12 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
     alles->addWidget(newCorJM, 7, 0, 1, 1, Qt::AlignHCenter);
     alles->addWidget(selectButton, 7, 1, 1, 1);
     alles->addWidget(corButton, 7, 2, 1, 2);
+    alles->addWidget(saveButton_b, 8, 0, 1, 2);
+    alles->addWidget(saveButton_j, 8, 2, 1, 2);
     setLayout(alles);
 
 
-
+    // here are the signals and slots
     auto f = [this](){
         zeichenflaeche_b->render(xEdit_b->text().toDouble(), yEdit_b->text().toDouble(), 1/zoomEdit_b->text().toDouble());
     };
@@ -114,6 +121,10 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
        xEdit_b->setText(QString::number(xcor));
        yEdit_b->setText(QString::number(ycor));
        zoomEdit_b->setText(QString::number(1/zoom));
+    });
+    connect(saveButton_b, &QPushButton::clicked, this, [this](){
+       QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "C:/Users/User/Pictures/untitled_mandelbrot_set.jpg", tr("Image (*.png, *.jpg, *.xpm)"));
+       zeichenflaeche_b->get_pixmap().save(fileName);
     });
 
 
@@ -147,28 +158,35 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
         cJuliaMenge = std::complex<double>(real, imag);
         zeichenflaeche_j->render();
     });
-
-
-
-    zeichenflaeche_b->set_formula([](std::complex<double> complexPoint, int maxIterations){
-        return RenderThread::in_mandelbrot_set(complexPoint, 0, maxIterations);
+    connect(saveButton_j, &QPushButton::clicked, this, [this](){
+       QString fileName = QFileDialog::getSaveFileName(this, tr("Save File"), "C:/Users/User/Pictures/untitled_julia_set.jpg", tr("Image (*.png, *.jpg, *.xpm)"));
+       zeichenflaeche_j->get_pixmap().save(fileName);
     });
-    xEdit_b->setText(QString::number(-0.5));
-    yEdit_b->setText(QString::number(0));
-    zoomEdit_b->setText(QString::number(1));
-    f();
 
-    zeichenflaeche_j->set_formula([](std::complex<double> complexPoint, int maxIterations){
-        return RenderThread::in_mandelbrot_set(cJuliaMenge, complexPoint, maxIterations);
-    });
-    corButton->clicked();
-    xEdit_j->setText(QString::number(0));
-    yEdit_j->setText(QString::number(0));
-    zoomEdit_j->setText(QString::number(1));
-    g();
+
+    // default settings
+    RenderThread::formula = [](std::complex<double> c, std::complex<double> z){
+        return z*z + c;
+    };
+    RenderThread::colorStyle = coloring::colorfunction::wavelength;
+    RenderThread::drawingStyle = coloring::drawingfunction::iteration;
+    reset_settings();
 }
 
 Mandelbrot::~Mandelbrot()
 {
     delete ui;
+}
+
+void Mandelbrot::reset_settings(){
+    xEdit_b->setText(QString::number(-0.5));
+    yEdit_b->setText(QString::number(0));
+    zoomEdit_b->setText(QString::number(1));
+    zeichenflaeche_b->render(xEdit_b->text().toDouble(), yEdit_b->text().toDouble(), 1/zoomEdit_b->text().toDouble());
+
+    corButton->clicked();
+    xEdit_j->setText(QString::number(0));
+    yEdit_j->setText(QString::number(0));
+    zoomEdit_j->setText(QString::number(1));
+    zeichenflaeche_j->render(xEdit_j->text().toDouble(), yEdit_j->text().toDouble(), 1/zoomEdit_j->text().toDouble());
 }

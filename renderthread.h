@@ -3,15 +3,18 @@
 
 #include <QObject>
 #include <QThread>
-#include <QImage>
 #include <QtCore>
-#include <QPainter>
 #include <complex>
+
+#include "coloring.h"
 
 
 const QSizeF MINSIZE = QSizeF(450, 300);
 extern std::complex<double> cJuliaMenge;
 
+
+
+// The Renderthread, does the actually work. It calculates the mandelbrot or Julia Set and then give it to zeichenflaeche
 class RenderThread : public QThread
 {
     Q_OBJECT
@@ -22,8 +25,14 @@ public:
 
     void run() override;
 
-    QRgb (*formula)(std::complex<double>, int);
-    static QRgb in_mandelbrot_set(std::complex<double> c,std::complex<double> z, int maxIterations);
+#define COMPLEX std::complex<double>
+    static std::function<COMPLEX(COMPLEX, COMPLEX)> formula;
+#undef COMPLEX
+    static coloring::colorfunction colorStyle;
+    static coloring::drawingfunction drawingStyle;
+    QRgb in_mandelbrot_set(std::complex<double> complexPoint, int maxIterations);
+
+    bool isForMandelbrot;
 
     RenderThread(const RenderThread&) = default;
     RenderThread& operator=(const RenderThread&) = default;

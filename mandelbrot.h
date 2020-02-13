@@ -21,8 +21,10 @@ class Mandelbrot : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Mandelbrot(QWidget *parent = 0);
+    explicit Mandelbrot(QWidget *parent = nullptr);
     ~Mandelbrot();
+
+    void reset_settings();
 
 private:
     Ui::Mandelbrot *ui;
@@ -35,6 +37,7 @@ private:
     QPushButton* xyButton_b;
     QLineEdit* zoomEdit_b;
     QPushButton* zoomButton_b;
+    QPushButton* saveButton_b;
 
     Zeichenflaeche* zeichenflaeche_j;
     QLineEdit* xEdit_j;
@@ -42,6 +45,7 @@ private:
     QPushButton* xyButton_j;
     QLineEdit* zoomEdit_j;
     QPushButton* zoomButton_j;
+    QPushButton* saveButton_j;
 };
 
 #endif // MANDELBROT_H

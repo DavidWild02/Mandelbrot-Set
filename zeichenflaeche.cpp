@@ -5,17 +5,21 @@
 const double scaleFactor = 0.8;
 
 
-Zeichenflaeche::Zeichenflaeche(QWidget *parent)  :
+Zeichenflaeche::Zeichenflaeche(bool isFMB, QWidget *parent)  :
     QWidget(parent),
-    ui(new Ui::Zeichenflaeche)
+    ui(new Ui::Zeichenflaeche),
+    renderthread(new RenderThread())
 {
     ui->setupUi(this);
     curScale = scale;
 
+    renderthread.isForMandelbrot = isFMB;
+
+    // gets the image from the RenderThread and update the widget
     connect(&renderthread, &RenderThread::result_ready, this, [this](QImage image, double cScale){
         pixmap = QPixmap::fromImage(image);
         curScale = cScale;
-        newMousePos = QPoint(0, 0);
+        newCenterPos = QPoint(0, 0);
         update();
     });
 
@@ -40,9 +44,8 @@ void Zeichenflaeche::render(double real, double imag, double zoom){
     render();
 }
 
-void Zeichenflaeche::set_formula(QRgb (*funktionsZeiger) (std::complex<double>, int)){
-    renderthread.formula = funktionsZeiger;
-    render();
+QPixmap Zeichenflaeche::get_pixmap(){
+    return pixmap;
 }
 
 void Zeichenflaeche::paintEvent(QPaintEvent*){
@@ -50,9 +53,9 @@ void Zeichenflaeche::paintEvent(QPaintEvent*){
 
     if(curScale != scale) {
         double f = curScale/scale;
-        pixmap = pixmap.scaled(this->width()*f, this->height()*f);
+        pixmap = pixmap.scaled(int(this->width()*f), int(this->height()*f));
     }
-    painter.drawPixmap(pixmapOffset + newMousePos, pixmap);
+    painter.drawPixmap(pixmapOffset + newCenterPos, pixmap);
 }
 
 void Zeichenflaeche::resizeEvent(QResizeEvent*){
@@ -63,7 +66,6 @@ void Zeichenflaeche::mousePressEvent(QMouseEvent *event){
     if (event->button() == Qt::LeftButton)
     {
         if(selectPoint){
-            selectPoint = false;
             int xMouse = event->x() - this->width()/2;
             int yMouse = this->height()/2 - event->y();
             emit selected_point(renderthread.calculate_coordinates(this->size(), xMouse, yMouse, scale) + offset);
@@ -75,7 +77,7 @@ void Zeichenflaeche::mousePressEvent(QMouseEvent *event){
 }
 
 void Zeichenflaeche::mouseMoveEvent(QMouseEvent *event){
-    if (event->buttons() & Qt::LeftButton){
+    if (event->buttons() & Qt::LeftButton && !selectPoint){
         pixmapOffset = event->pos() - lastDragPos;
         update();
     }
@@ -83,10 +85,14 @@ void Zeichenflaeche::mouseMoveEvent(QMouseEvent *event){
 
 void Zeichenflaeche::mouseReleaseEvent(QMouseEvent *event){
     if(event->button() == Qt::LeftButton){
-        offset += renderthread.calculate_coordinates(this->size(), -pixmapOffset.x(), pixmapOffset.y(), scale);
-        pixmapOffset = QPoint(0, 0);
-        lastDragPos = QPoint(0, 0);
-        render();
+        if(selectPoint)
+            selectPoint = false;
+        else{
+            offset += renderthread.calculate_coordinates(this->size(), -pixmapOffset.x(), pixmapOffset.y(), scale);
+            pixmapOffset = QPoint(0, 0);
+            lastDragPos = QPoint(0, 0);
+            render();
+        }
     }
 }
 
@@ -98,8 +104,8 @@ void Zeichenflaeche::wheelEvent(QWheelEvent *event){
     offset += renderthread.calculate_coordinates(this->size(), xMouse, yMouse, scale) * (1.0 - pow(scaleFactor, numSteps));
     scale *= pow(scaleFactor, numSteps);
     QPoint sizePoint = QPoint(this->width(), this->height());
-    newMousePos = -sizePoint * (curScale/scale - 1.0 )/2.0;
-    newMousePos += QPoint(-xMouse, yMouse) * (curScale/scale - 1.0);
+    newCenterPos = -sizePoint * (curScale/scale - 1.0 )/2.0;
+    newCenterPos += QPoint(-xMouse, yMouse) * (curScale/scale - 1.0);
     update();
     render();
 }

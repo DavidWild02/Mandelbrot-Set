@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += xml
 QMAKE_CXXFLAGS += -std=c++17
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -17,13 +18,15 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     mandelbrot.cpp \
     renderthread.cpp \
-    zeichenflaeche.cpp
+    zeichenflaeche.cpp \
+    coloring.cpp
 
 
 HEADERS  += mainwindow.h \
     mandelbrot.h \
     zeichenflaeche.h \
-    renderthread.h
+    renderthread.h \
+    coloring.h
 
 FORMS    += mainwindow.ui \
     mandelbrot.ui \
