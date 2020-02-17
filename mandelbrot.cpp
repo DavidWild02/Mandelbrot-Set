@@ -168,7 +168,7 @@ Mandelbrot::Mandelbrot(QWidget *parent) :
     RenderThread::formula = [](std::complex<double> c, std::complex<double> z){
         return z*z + c;
     };
-    RenderThread::colorStyle = coloring::colorfunction::wavelength;
+    RenderThread::colorStyle = coloring::colorfunction::circleHSV;
     RenderThread::drawingStyle = coloring::drawingfunction::iteration;
     reset_settings();
 }

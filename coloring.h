@@ -8,12 +8,12 @@
 #include <QtCore>
 #include <vector>
 #include <complex>
+#include <QtDebug>
 
 namespace coloring{
     enum colorfunction{
-        wavelength,
         zickZackRGB,
-        cieInnercircle
+        circleHSV
     };
 
     enum drawingfunction{
@@ -23,12 +23,10 @@ namespace coloring{
         orbitTrapping
     };
 
-    QRgb colored_by_argument(std::complex<double> p);
-    QRgb cie_innercircle(int iterations);
+    QRgb iter_to_circle(int iterations);
     QRgb zick_zack_rgb(int iterations);
-    QRgb wavelength_color(int iterations);
-    QRgb colored_c_plane(std::complex<double> p);
     QRgb black_white_distance(double dist);
+    QRgb colored_by_argument(std::complex<double> p);
     QRgb colored_orbit(double dist, std::complex<double> p);
 }
 

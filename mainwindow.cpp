@@ -59,23 +59,24 @@ void MainWindow::create_actions(){
     NEW_FORMULA(formula2, z*z*z+c);
 
     NEW_COLORINGSTYLE(coloringStyle1, zickZackRGB);
-    NEW_COLORINGSTYLE(coloringStyle2, wavelength);
-    NEW_COLORINGSTYLE(coloringStyle3, cieInnercircle);
+    NEW_COLORINGSTYLE(coloringStyle2, circleHSV);
 
     NEW_DRAWINGSTYLE(drawingStyle1, iteration);
     NEW_DRAWINGSTYLE(drawingStyle2, innerColoring);
     NEW_DRAWINGSTYLE(drawingStyle3, coloredArgument);
     NEW_DRAWINGSTYLE(drawingStyle4, orbitTrapping);
 
+    /*
     connect(resetAction, &QAction::triggered, this, [this](){
         mandelbrot->reset_settings();
     });
+    // Error here
+    */
 
 #undef NEW_FORMULA
 #undef NEW_DRAWING_STYLE
 #undef NEW_COLORING_STYLE
     formula1->setChecked(true);
-    coloringStyle3->setChecked(true);
     drawingStyle1->setChecked(true);
 }
 
@@ -87,7 +88,6 @@ void MainWindow::create_menus(){
     coloringStyleMenu = menuBar()->addMenu(tr("choose coloringstyle"));
     coloringStyleMenu->addAction(coloringStyle1);
     coloringStyleMenu->addAction(coloringStyle2);
-    coloringStyleMenu->addAction(coloringStyle3);
     drawingStyleMenu = menuBar()->addMenu(tr("choose drawingstyle"));
     drawingStyleMenu->addAction(drawingStyle1);
     drawingStyleMenu->addAction(drawingStyle2);

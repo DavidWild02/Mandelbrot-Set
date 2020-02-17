@@ -131,10 +131,8 @@ QRgb RenderThread::in_mandelbrot_set(std::complex<double> complexPoint, int maxI
                 // how to colorate the point is pointless, you can be creative
                 if(std::abs(z) > 2){
                     switch(colorStyle){
-                        case coloring::colorfunction::wavelength :
-                            return coloring::wavelength_color(i);
-                        case coloring::colorfunction::cieInnercircle :
-                            return coloring::cie_innercircle(i);
+                        case coloring::colorfunction::circleHSV :
+                            return coloring::iter_to_circle(i);
                         case coloring::colorfunction::zickZackRGB :
                             return coloring::zick_zack_rgb(i);
                     }
@@ -150,7 +148,7 @@ QRgb RenderThread::in_mandelbrot_set(std::complex<double> complexPoint, int maxI
                 if(std::abs(z) > 2)
                     return qRgb(0,0,0);
             }
-            return coloring::colored_c_plane(z);
+            return coloring::colored_by_argument(z);
 
         case coloring::drawingfunction::coloredArgument :
             for(int i = 0; i < maxIterations; i++)
