@@ -3,5 +3,6 @@
 An Application to visualize the famous Mandelbrot-Set. <br/>
 https://de.wikipedia.org/wiki/Mandelbrot-Menge
 
-This project has some confusing UI-elements, what seem pointless. This is because I wanted to add some functionalities later on.
-
+![](https://github.com/DavidWild02/Mandelbrot-Set/images/Mandelbrot-Set.jpg)
+![](https://github.com/DavidWild02/Mandelbrot-Set/images/Mandelbrot-Set2.jpg)
+![](https://github.com/DavidWild02/Mandelbrot-Set/images/Mandelbrot-Set3.jpg)
